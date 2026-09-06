@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Pencil, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Pencil,
+  UserRound,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { ProjectWorkItems } from "@/components/projects/project-work-items";
 import { ProjectFilesDeliverables } from "@/components/projects/project-files-deliverables";
 import { ProjectFeedbackApprovals } from "@/components/projects/project-feedback-approvals";
 import { ProjectActivityTimeline } from "@/components/projects/project-activity-timeline";
+import { ProjectAIIntelligence } from "@/components/projects/project-ai-intelligence";
 import { createClient } from "@/lib/supabase/server";
 import type {
   Activity,
@@ -130,7 +136,9 @@ export default async function ProjectDetailPage({
 
     supabase
       .from("feedback")
-      .select("id, project_id, deliverable_id, author_id, message, created_at")
+      .select(
+        "id, project_id, deliverable_id, author_id, message, created_at",
+      )
       .eq("project_id", project.id)
       .order("created_at", { ascending: false }),
 
@@ -233,7 +241,9 @@ export default async function ProjectDetailPage({
       <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="space-y-6">
           <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">Overview</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              Overview
+            </h2>
 
             <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-600">
               {project.description ||
@@ -275,7 +285,10 @@ export default async function ProjectDetailPage({
 
           <dl className="mt-5 space-y-5">
             <div className="flex gap-3">
-              <UserRound className="mt-0.5 shrink-0 text-slate-400" size={18} />
+              <UserRound
+                className="mt-0.5 shrink-0 text-slate-400"
+                size={18}
+              />
 
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -351,6 +364,8 @@ export default async function ProjectDetailPage({
       />
 
       <ProjectActivityTimeline activities={activities} />
+
+      <ProjectAIIntelligence projectId={project.id} />
     </>
   );
 }
