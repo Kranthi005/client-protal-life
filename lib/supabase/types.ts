@@ -1,3 +1,26 @@
+export type Feedback = {
+  id: string;
+  project_id: string;
+  deliverable_id: string | null;
+  author_id: string;
+  message: string;
+  created_at: string;
+};
+
+export type ApprovalStatus = "PENDING" | "APPROVED" | "CHANGES_REQUESTED";
+
+export type Approval = {
+  id: string;
+  project_id: string;
+  deliverable_id: string;
+  requested_by: string;
+  reviewed_by: string | null;
+  status: ApprovalStatus;
+  comment: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
 export type UserRole = "SERVICE_PROVIDER" | "CLIENT";
 
 export const PROJECT_STATUSES = [

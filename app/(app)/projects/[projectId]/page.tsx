@@ -3,9 +3,12 @@ import { ArrowLeft, CalendarDays, Pencil, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ProjectWorkItems } from "@/components/projects/project-work-items";
 import { ProjectFilesDeliverables } from "@/components/projects/project-files-deliverables";
+import { ProjectFeedbackApprovals } from "@/components/projects/project-feedback-approvals";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  Approval,
   Deliverable,
+  Feedback,
   Milestone,
   Profile,
   Project,
@@ -80,47 +83,69 @@ export default async function ProjectDetailPage({
   const project = data;
   const canEdit = profile?.role === "SERVICE_PROVIDER";
 
-  const [tasksResult, milestonesResult, filesResult, deliverablesResult] =
-    await Promise.all([
-      supabase
-        .from("tasks")
-        .select(
-          "id, project_id, title, description, status, priority, due_date, created_at, updated_at",
-        )
-        .eq("project_id", project.id)
-        .order("due_date", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: false }),
+  const [
+    tasksResult,
+    milestonesResult,
+    filesResult,
+    deliverablesResult,
+    feedbackResult,
+    approvalsResult,
+  ] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select(
+        "id, project_id, title, description, status, priority, due_date, created_at, updated_at",
+      )
+      .eq("project_id", project.id)
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false }),
 
-      supabase
-        .from("milestones")
-        .select(
-          "id, project_id, title, description, status, due_date, created_at, updated_at",
-        )
-        .eq("project_id", project.id)
-        .order("due_date", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: false }),
+    supabase
+      .from("milestones")
+      .select(
+        "id, project_id, title, description, status, due_date, created_at, updated_at",
+      )
+      .eq("project_id", project.id)
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false }),
 
-      supabase
-        .from("project_files")
-        .select(
-          "id, project_id, name, storage_path, mime_type, size_bytes, uploaded_by, created_at",
-        )
-        .eq("project_id", project.id)
-        .order("created_at", { ascending: false }),
+    supabase
+      .from("project_files")
+      .select(
+        "id, project_id, name, storage_path, mime_type, size_bytes, uploaded_by, created_at",
+      )
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false }),
 
-      supabase
-        .from("deliverables")
-        .select(
-          "id, project_id, file_id, title, description, status, created_at, updated_at",
-        )
-        .eq("project_id", project.id)
-        .order("created_at", { ascending: false }),
-    ]);
+    supabase
+      .from("deliverables")
+      .select(
+        "id, project_id, file_id, title, description, status, created_at, updated_at",
+      )
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false }),
+
+    supabase
+      .from("feedback")
+      .select("id, project_id, deliverable_id, author_id, message, created_at")
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false }),
+
+    supabase
+      .from("approvals")
+      .select(
+        "id, project_id, deliverable_id, requested_by, reviewed_by, status, comment, created_at, reviewed_at",
+      )
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const tasks = (tasksResult.data ?? []) as Task[];
   const milestones = (milestonesResult.data ?? []) as Milestone[];
   const files = (filesResult.data ?? []) as ProjectFile[];
   const deliverables = (deliverablesResult.data ?? []) as Deliverable[];
+  const feedback = (feedbackResult.data ?? []) as Feedback[];
+  const approvals = (approvalsResult.data ?? []) as Approval[];
 
   const filesWithUrls = await Promise.all(
     files.map(async (file) => {
@@ -302,6 +327,15 @@ export default async function ProjectDetailPage({
         files={filesWithUrls}
         deliverables={deliverables}
         canManage={canEdit}
+      />
+
+      <ProjectFeedbackApprovals
+        projectId={project.id}
+        feedback={feedback}
+        approvals={approvals}
+        deliverables={deliverables}
+        currentUserId={user?.id ?? ""}
+        currentUserRole={profile?.role ?? "CLIENT"}
       />
     </>
   );
