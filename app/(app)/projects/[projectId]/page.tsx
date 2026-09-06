@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { ProjectWorkItems } from "@/components/projects/project-work-items";
 import { ProjectFilesDeliverables } from "@/components/projects/project-files-deliverables";
 import { ProjectFeedbackApprovals } from "@/components/projects/project-feedback-approvals";
+import { ProjectActivityTimeline } from "@/components/projects/project-activity-timeline";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  Activity,
   Approval,
   Deliverable,
   Feedback,
@@ -90,6 +92,7 @@ export default async function ProjectDetailPage({
     deliverablesResult,
     feedbackResult,
     approvalsResult,
+    activitiesResult,
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -138,6 +141,14 @@ export default async function ProjectDetailPage({
       )
       .eq("project_id", project.id)
       .order("created_at", { ascending: false }),
+
+    supabase
+      .from("activities")
+      .select(
+        "id, project_id, actor_id, type, title, description, metadata, created_at",
+      )
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const tasks = (tasksResult.data ?? []) as Task[];
@@ -146,6 +157,7 @@ export default async function ProjectDetailPage({
   const deliverables = (deliverablesResult.data ?? []) as Deliverable[];
   const feedback = (feedbackResult.data ?? []) as Feedback[];
   const approvals = (approvalsResult.data ?? []) as Approval[];
+  const activities = (activitiesResult.data ?? []) as Activity[];
 
   const filesWithUrls = await Promise.all(
     files.map(async (file) => {
@@ -337,6 +349,8 @@ export default async function ProjectDetailPage({
         currentUserId={user?.id ?? ""}
         currentUserRole={profile?.role ?? "CLIENT"}
       />
+
+      <ProjectActivityTimeline activities={activities} />
     </>
   );
 }

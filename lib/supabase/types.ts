@@ -139,3 +139,25 @@ export type Deliverable = {
   created_at: string;
   updated_at: string;
 };
+
+export type Activity = {
+  id: string;
+  project_id: string;
+  actor_id: string | null;
+  type: string;
+  title: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  activity_id: string | null;
+  title: string;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+};
