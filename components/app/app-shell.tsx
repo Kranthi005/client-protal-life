@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import {
   Activity,
+  Bell,
   CheckSquare,
   Files,
   FolderKanban,
@@ -45,6 +48,7 @@ export function AppShell({
             </span>
           </Link>
         </div>
+
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:block lg:space-y-1 lg:pb-0">
           {navigation.map(({ href, label, icon: Icon }) => (
             <Link
@@ -57,11 +61,13 @@ export function AppShell({
             </Link>
           ))}
         </nav>
+
         <div className="mt-auto hidden border-t border-slate-200 p-4 lg:block">
           <div className="mb-3 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
               {displayName.slice(0, 1).toUpperCase()}
             </div>
+
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-800">
                 {displayName}
@@ -69,6 +75,7 @@ export function AppShell({
               <p className="text-xs text-slate-500">{role}</p>
             </div>
           </div>
+
           <form action={logout}>
             <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-950">
               <LogOut size={16} />
@@ -77,23 +84,38 @@ export function AppShell({
           </form>
         </div>
       </aside>
+
       <div className="lg:ml-64 lg:w-[calc(100%-16rem)]">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:px-8">
           <p className="text-sm font-medium text-slate-500">Your workspace</p>
-          <div className="flex items-center gap-2 lg:hidden">
-            <span className="text-sm font-medium text-slate-700">
-              {displayName}
-            </span>
-            <form action={logout}>
-              <button
-                aria-label="Sign out"
-                className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
-              >
-                <LogOut size={17} />
-              </button>
-            </form>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+            >
+              <Bell size={19} />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-slate-900" />
+            </Link>
+
+            <div className="flex items-center gap-2 lg:hidden">
+              <span className="text-sm font-medium text-slate-700">
+                {displayName}
+              </span>
+
+              <form action={logout}>
+                <button
+                  aria-label="Sign out"
+                  className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+                >
+                  <LogOut size={17} />
+                </button>
+              </form>
+            </div>
           </div>
         </header>
+
         <main className="mx-auto max-w-6xl px-5 py-8 lg:px-8">{children}</main>
       </div>
     </div>

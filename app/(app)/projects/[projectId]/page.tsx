@@ -1,10 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Pencil,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, Eye, Pencil, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ProjectWorkItems } from "@/components/projects/project-work-items";
 import { ProjectFilesDeliverables } from "@/components/projects/project-files-deliverables";
@@ -55,14 +50,24 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ message?: string; view?: string }>;
 }) {
-  const [{ projectId }, { message }] = await Promise.all([
+  const [{ projectId }, { message, view }] = await Promise.all([
     params,
     searchParams,
   ]);
 
+  const clientView = view === "client";
+
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
 
   const { data, error } = await supabase
     .from("projects")
@@ -76,20 +81,15 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select("id, full_name, role, created_at, updated_at")
-        .eq("id", user.id)
-        .maybeSingle<Profile>()
-    : { data: null };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, created_at, updated_at")
+    .eq("id", user.id)
+    .maybeSingle<Profile>();
 
   const project = data;
   const canEdit = profile?.role === "SERVICE_PROVIDER";
+  const canManage = canEdit && !clientView;
 
   const [
     tasksResult,
@@ -136,9 +136,7 @@ export default async function ProjectDetailPage({
 
     supabase
       .from("feedback")
-      .select(
-        "id, project_id, deliverable_id, author_id, message, created_at",
-      )
+      .select("id, project_id, deliverable_id, author_id, message, created_at")
       .eq("project_id", project.id)
       .order("created_at", { ascending: false }),
 
@@ -199,6 +197,29 @@ export default async function ProjectDetailPage({
         All projects
       </Link>
 
+      {clientView && (
+        <div className="mt-5 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Eye className="text-blue-700" size={19} />
+            <div>
+              <p className="text-sm font-semibold text-blue-950">
+                Client preview
+              </p>
+              <p className="text-xs text-blue-700">
+                This is how the project workspace appears to a client.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href={`/projects/${project.id}`}
+            className="text-sm font-semibold text-blue-800 underline underline-offset-4 hover:text-blue-950"
+          >
+            Exit preview
+          </Link>
+        </div>
+      )}
+
       <div className="mt-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -218,15 +239,27 @@ export default async function ProjectDetailPage({
           </p>
         </div>
 
-        {canEdit && (
-          <Link
-            href={`/projects/${project.id}/edit`}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-          >
-            <Pencil size={16} />
-            Edit project
-          </Link>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {!clientView && canEdit && (
+            <>
+              <Link
+                href={`/projects/${project.id}?view=client`}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                <Eye size={16} />
+                Client view
+              </Link>
+
+              <Link
+                href={`/projects/${project.id}/edit`}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                <Pencil size={16} />
+                Edit project
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {message && (
@@ -241,9 +274,7 @@ export default async function ProjectDetailPage({
       <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="space-y-6">
           <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">
-              Overview
-            </h2>
+            <h2 className="text-base font-semibold text-slate-900">Overview</h2>
 
             <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-600">
               {project.description ||
@@ -285,10 +316,7 @@ export default async function ProjectDetailPage({
 
           <dl className="mt-5 space-y-5">
             <div className="flex gap-3">
-              <UserRound
-                className="mt-0.5 shrink-0 text-slate-400"
-                size={18}
-              />
+              <UserRound className="mt-0.5 shrink-0 text-slate-400" size={18} />
 
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -342,7 +370,7 @@ export default async function ProjectDetailPage({
         projectId={project.id}
         tasks={tasks}
         milestones={milestones}
-        canManage={canEdit}
+        canManage={canManage}
         tasksError={Boolean(tasksResult.error)}
         milestonesError={Boolean(milestonesResult.error)}
       />
@@ -351,7 +379,7 @@ export default async function ProjectDetailPage({
         projectId={project.id}
         files={filesWithUrls}
         deliverables={deliverables}
-        canManage={canEdit}
+        canManage={canManage}
       />
 
       <ProjectFeedbackApprovals
@@ -359,7 +387,7 @@ export default async function ProjectDetailPage({
         feedback={feedback}
         approvals={approvals}
         deliverables={deliverables}
-        currentUserId={user?.id ?? ""}
+        currentUserId={user.id}
         currentUserRole={profile?.role ?? "CLIENT"}
       />
 
